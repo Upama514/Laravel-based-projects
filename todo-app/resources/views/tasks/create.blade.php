@@ -24,7 +24,7 @@
 <div class="form-body">
     <div class="container-fluid">
         <form action="{{ route('tasks.store') }}" method="POST">
-            @csrf
+            @csrf 
             
             <!-- Task Title -->
             <div class="mb-4">

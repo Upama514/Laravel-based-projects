@@ -23,8 +23,16 @@ class TaskController extends Controller
     // নতুন task save করবে
     public function store(Request $request)
     {
-        $request->validate(['title' => 'required']);
-        Task::create(['title' => $request->title]);
+        $request->validate([
+            'title' => 'required'
+        ]);
+
+        Task::create([
+            'title' => $request->title,
+            'description' => $request->description,
+            'is_completed' => $request->has('is_completed') ? true : false
+        ]);
+
         return redirect()->route('tasks.index');
     }
 
