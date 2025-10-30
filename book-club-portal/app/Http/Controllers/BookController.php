@@ -39,13 +39,17 @@ class BookController extends Controller
 
     public function edit(Book $book)
     {
-        $this->authorize('update', $book); // policy check
+        if ($book->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized access.');
+        }
         return view('pages.book_edit', compact('book'));
     }
 
     public function update(Request $request, Book $book)
     {
-        $this->authorize('update', $book);
+        if ($book->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
 
         $request->validate([
             'title' => 'required|string|max:255',
@@ -60,7 +64,10 @@ class BookController extends Controller
 
     public function destroy(Book $book)
     {
-        $this->authorize('delete', $book);
+        if ($book->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+        
         $book->delete();
         return redirect()->route('books.index')->with('success', 'Book deleted successfully!');
     }

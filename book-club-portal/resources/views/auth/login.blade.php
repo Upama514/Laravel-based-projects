@@ -1,17 +1,43 @@
 @extends('layouts.app')
 
 @section('content')
-<h2>Login</h2>
-<form action="{{ route('login') }}" method="POST">
+<h1>Login</h1>
+
+<!-- Login type selection -->
+<form method="GET" action="{{ route('login') }}">
+    <label>
+        <input type="radio" name="role" value="user" {{ request('role') !== 'admin' ? 'checked' : '' }}>
+        User Login
+    </label>
+    <label>
+        <input type="radio" name="role" value="admin" {{ request('role') === 'admin' ? 'checked' : '' }}>
+        Admin Login
+    </label>
+    <button type="submit">Proceed</button>
+</form>
+
+<!-- Login form -->
+@if(request('role') === 'admin')
+    <h3>Admin Login</h3>
+@else
+    <h3>User Login</h3>
+@endif
+
+<form method="POST" action="{{ route('login') }}">
     @csrf
+    <!-- hidden field to pass role -->
+    <input type="hidden" name="role" value="{{ request('role') === 'admin' ? 'admin' : 'user' }}">
+
     <div>
-        <label>Email:</label><br>
-        <input type="email" name="email" value="{{ old('email') }}" required>
+        <label>Email</label>
+        <input type="email" name="email" required>
     </div>
+
     <div>
-        <label>Password:</label><br>
+        <label>Password</label>
         <input type="password" name="password" required>
     </div>
+
     <button type="submit">Login</button>
 </form>
 @endsection

@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\AdminController;
+
 
 // 🟢 Public routes
 Route::get('/', [PageController::class, 'home'])->name('home');
