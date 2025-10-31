@@ -27,10 +27,30 @@
                     <h4 class="font-medium mt-3 mb-2">Books ({{ $user->books->count() }}):</h4>
                     <ul class="list-disc list-inside space-y-1">
                         @foreach($user->books as $book)
-                            <li class="text-gray-700">
+                            <li class="text-gray-700 mb-4">
                                 <strong>{{ $book->title }}</strong> 
                                 @if($book->author)
                                     by {{ $book->author }}
+                                @endif
+                                <p class="text-gray-600 text-sm">{{ $book->description }}</p>
+
+                                <!-- Comment form -->
+                                <form action="{{ route('comments.store', $book->id) }}" method="POST" class="mt-2">
+                                    @csrf
+                                    <textarea name="content" class="w-full border rounded p-2 text-sm" placeholder="Write a comment..." required></textarea>
+                                    <button type="submit" class="bg-blue-500 text-white px-3 py-1 rounded mt-1">Add Comment</button>
+                                </form>
+
+                                <!-- Show existing comments -->
+                                @if($book->comments->count() > 0)
+                                    <ul class="mt-2 border-t pt-2 text-sm text-gray-700">
+                                        @foreach($book->comments as $comment)
+                                            <li>
+                                                <strong>{{ $comment->user->name }}:</strong> {{ $comment->content }}
+                                                <span class="text-xs text-gray-500">({{ $comment->created_at->diffForHumans() }})</span>
+                                            </li>
+                                        @endforeach
+                                    </ul>
                                 @endif
                             </li>
                         @endforeach
