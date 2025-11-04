@@ -8,67 +8,77 @@ use Illuminate\Support\Facades\Auth;
 
 class BookController extends Controller
 {
+    // Get user's books
     public function index()
     {
-        $books = Auth::user()->books; // শুধু current user এর books দেখাবে
-        return view('pages.books', compact('books'));
+        $books = Book::where('user_id', Auth::id())->with('user:id,name')->get();
+        return response()->json($books, 200);
     }
 
-    public function create()
-    {
-        return view('pages.book_create');
-    }
-
+    // Create new book
     public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'author' => 'nullable|string|max:255',
+            'author' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
 
-        Book::create([
+        $book = Book::create([
             'user_id' => Auth::id(),
             'title' => $request->title,
             'author' => $request->author,
             'description' => $request->description,
         ]);
 
-        return redirect()->route('books.index')->with('success', 'Book added successfully!');
+        return response()->json([
+            'message' => 'Book created successfully.', 
+            'book' => $book
+        ], 201);
     }
 
-    public function edit(Book $book)
-    {
-        if ($book->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized access.');
-        }
-        return view('pages.book_edit', compact('book'));
-    }
-
+    // Update book
     public function update(Request $request, Book $book)
     {
+        // Check ownership
         if ($book->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
+            return response()->json(['message' => 'Unauthorized action.'], 403);
         }
 
         $request->validate([
             'title' => 'required|string|max:255',
-            'author' => 'nullable|string|max:255',
+            'author' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
 
-        $book->update($request->only('title','author','description'));
+        $book->update($request->only('title', 'author', 'description'));
 
-        return redirect()->route('books.index')->with('success', 'Book updated successfully!');
+        return response()->json([
+            'message' => 'Book updated successfully.', 
+            'book' => $book
+        ], 200);
     }
 
+    // Delete book
     public function destroy(Book $book)
     {
+        // Check ownership
         if ($book->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
+            return response()->json(['message' => 'Unauthorized action.'], 403);
+        }
+
+        $book->delete();
+        return response()->json(['message' => 'Book deleted successfully.'], 200);
+    }
+
+    // Get single book
+    public function show(Book $book)
+    {
+        // Check ownership
+        if ($book->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized action.'], 403);
         }
         
-        $book->delete();
-        return redirect()->route('books.index')->with('success', 'Book deleted successfully!');
+        return response()->json($book, 200);
     }
 }

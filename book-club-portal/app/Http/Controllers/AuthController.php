@@ -3,77 +3,92 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    // Registration form view
-    public function showRegister() {
-        return view('auth.register');
-    }
-
-    // Register user
-    public function register(Request $request) {
+    // 🟢 Register
+    public function register(Request $request)
+    {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed'
         ]);
 
-        // Create new user
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => 'user'
         ]);
 
-        // Redirect to login page
-        return redirect()->route('login')->with('success', 'Registration successful! Please login.');
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Registration successful.',
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ]
+        ], 201);
     }
 
-    // Login form view
-    public function showLogin() {
-        return view('auth.login');
-    }
-
-    // Authenticate user
+    // 🟢 Login
     public function login(Request $request)
-{
-    $credentials = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required'
-    ]);
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
 
-    $role = $request->input('role', 'user'); // default user
-
-    if (Auth::attempt($credentials)) {
-        $request->session()->regenerate();
-
-        // Role check
-        if (Auth::user()->role !== $role) {
-            Auth::logout();
-            return back()->withErrors(['email' => 'Invalid credentials for selected role.']);
+        if (!Auth::attempt($credentials)) {
+            return response()->json(['message' => 'Invalid credentials.'], 401);
         }
 
-        // Redirect based on role
-        if ($role === 'admin') {
-            return redirect()->route('admin.dashboard')->with('success', 'Welcome Admin!');
-        } else {
-            return redirect()->route('dashboard')->with('success', 'Welcome User!');
+        $user = Auth::user();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful.',
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ]
+        ], 200);
+    }
+
+    // 🟢 Logout
+    public function logout(Request $request)
+    {
+        try {
+            $request->user()->currentAccessToken()->delete();
+            return response()->json(['message' => 'Logged out successfully.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Logout successful.'], 200);
         }
     }
 
-    return back()->withErrors(['email' => 'Invalid credentials.']);
-}
-
-
-    // Logout user
-    public function logout(Request $request) {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-        return redirect()->route('home')->with('success', 'You have logged out successfully.');
+    // 🟢 User profile
+    public function userProfile(Request $request)
+    {
+        $user = $request->user();
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ]
+        ], 200);
     }
 }
